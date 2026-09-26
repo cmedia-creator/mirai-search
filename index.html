@@ -19,6 +19,11 @@
 <div id="start"><div><div class="title">DREAM//ERROR</div><p class="sub">EARLY DS 3D TEST<br><br>左ドラッグ：移動　右ドラッグ：視点<br>机と椅子の横・後ろへ回り込めるか確認</p><button id="play">START</button></div></div>
 <script>
 (function(){
+let running=false,last=performance.now();
+const startEl=document.getElementById('start'),statusEl=document.getElementById('status'),playEl=document.getElementById('play');
+playEl.addEventListener('click',()=>{startEl.style.display='none';running=true;last=performance.now()});
+playEl.addEventListener('touchend',e=>{e.preventDefault();startEl.style.display='none';running=true;last=performance.now()},{passive:false});
+try{
 const cv=document.getElementById('gl'),gl=cv.getContext('webgl2',{alpha:false,antialias:false,powerPreference:'high-performance'});
 if(!gl){document.getElementById('status').textContent='WebGL2 unavailable';return}
 const VS=\`#version 300 es
@@ -57,7 +62,7 @@ function chair(x,z){shadow(x,z,.34,.34);add('wood',x,.45,z,.38,.045,.36,true);ad
 for(let r=0;r<3;r++)for(let q=0;q<3;q++){let x=-2.4+q*2.4,z=-6-r*2.6;desk(x,z);chair(x,z+.85)}
 // blackboard + lockers
 add('metal',2.9,1.65,-15.75,2.1,.75,.04);for(let i=0;i<4;i++){shadow(5.52,-5-i*1.25,.34,.48);add('metal',5.55,.9,-5-i*1.25,.35,.9,.5,true)}
-let pos={x:0,z:-1.2},yaw=-Math.PI/2,mv={x:0,y:0},sprint=false,running=false,last=performance.now();
+let pos={x:0,z:-1.2},yaw=-Math.PI/2,mv={x:0,y:0},sprint=false;
 function mat4(){return new Float32Array(16)}
 function perspective(o,fov,asp,n,f){let t=1/Math.tan(fov/2);o.fill(0);o[0]=t/asp;o[5]=t;o[10]=(f+n)/(n-f);o[11]=-1;o[14]=2*f*n/(n-f);return o}
 function look(o,ex,ey,ez,cx,cy,cz){let zx=ex-cx,zy=ey-cy,zz=ez-cz,l=Math.hypot(zx,zy,zz);zx/=l;zy/=l;zz/=l;let xx=zz,xz=-zx;l=Math.hypot(xx,xz);xx/=l;xz/=l;let yx=-zy*xz,yy=zz*xx-zx*xz,yz=zy*xx;o.set([xx,yx,zx,0,0,yy,zy,0,xz,yz,zz,0,-(xx*ex+xz*ez),-(yx*ex+yy*ey+yz*ez),-(zx*ex+zy*ey+zz*ez),1]);return o}
@@ -73,6 +78,6 @@ let lid=null,rid=null,ls=null,rs=null,nub=document.getElementById('nub');cv.addE
 cv.addEventListener('touchmove',e=>{e.preventDefault();for(let t of e.changedTouches){if(t.identifier===lid){let dx=t.clientX-ls.x,dy=t.clientY-ls.y,m=Math.hypot(dx,dy),lim=38;if(m>lim){dx*=lim/m;dy*=lim/m}mv.x=dx/lim;mv.y=dy/lim;nub.style.transform='translate('+dx+'px,'+dy+'px)'}else if(t.identifier===rid){yaw+=(t.clientX-rs.x)*.006;rs.x=t.clientX;rs.y=t.clientY}}},{passive:false});
 function endTouch(e){for(let t of e.changedTouches){if(t.identifier===lid){lid=null;mv.x=mv.y=0;nub.style.transform='none'}if(t.identifier===rid)rid=null}}cv.addEventListener('touchend',endTouch);cv.addEventListener('touchcancel',endTouch);
 let rb=document.getElementById('run');rb.addEventListener('touchstart',e=>{e.preventDefault();sprint=true},{passive:false});rb.addEventListener('touchend',()=>sprint=false);rb.addEventListener('touchcancel',()=>sprint=false);
-document.getElementById('play').onclick=()=>{document.getElementById('start').style.display='none';running=true;last=performance.now()};
+}catch(err){statusEl.textContent='WEBGL ERROR: '+String(err).slice(0,80);console.error(err);}
 })();
 </script></body></html>
