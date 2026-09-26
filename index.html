@@ -5,24 +5,24 @@ var cv=document.getElementById('c'),ctx=cv.getContext('2d',{alpha:false}),vw=0,v
 var map=[
 "111111111111111111111",
 "100000000000000000001",
-"101111011111011111101",
-"100001000001000000001",
-"101101011101011101101",
-"100100010000010001001",
-"100101110111110101001",
-"100100000100000101001",
-"101111010101111101001",
-"100000010100000001001",
-"101111110111110111101",
-"100000000000010000001",
-"101101111110010111101",
-"100100000010010000001",
-"100101110010111101101",
-"100100000000000001001",
-"101111011111011101001",
+"100000000000000000001",
+"100000000000000000001",
+"100011110000011110001",
+"100010000000000010001",
+"100010000000000010001",
+"100010000000000010001",
+"100000000000000000001",
+"100000000000000000001",
+"100000111000111000001",
+"100000100000001000001",
+"100000100000001000001",
+"100000000000000000001",
+"100000000000000000001",
+"100011100000001110001",
+"100000000000000000001",
 "100000000000000000001",
 "111111111111111111111"],MW=21,MH=19;
-var p={x:1.5,y:1.5},enemy={x:10.5,y:3.5},ang=0,mv={x:0,y:0},running=false,sprint=false,last=performance.now(),chasing=false,seenTimer=0,stepTimer=0,audio=null,patrol=0,patrolPts=[{x:10.5,y:3.5},{x:14.5,y:3.5},{x:14.5,y:5.5},{x:10.5,y:5.5},{x:6.5,y:5.5},{x:6.5,y:3.5}];
+var p={x:1.5,y:1.5},enemy={x:10.5,y:3.5},ang=0,mv={x:0,y:0},running=false,sprint=false,last=performance.now(),chasing=false,seenTimer=0,stepTimer=0,audio=null,patrol=0,patrolPts=[{x:10.5,y:3.5},{x:17.5,y:3.5},{x:17.5,y:9.5},{x:10.5,y:9.5},{x:4.5,y:9.5},{x:4.5,y:15.5},{x:15.5,y:15.5},{x:10.5,y:3.5}];
 function resize(){vw=innerWidth;vh=innerHeight;var d=Math.min(devicePixelRatio||1,2);cv.width=Math.round(vw*d);cv.height=Math.round(vh*d);ctx.setTransform(d,0,0,d,0,0);ctx.imageSmoothingEnabled=false}resize();addEventListener('resize',resize);
 function wall(x,y){var X=Math.floor(x),Y=Math.floor(y);return X<0||Y<0||X>=MW||Y>=MH||map[Y][X]==='1'}function free(x,y){var r=.16;return !wall(x-r,y-r)&&!wall(x+r,y-r)&&!wall(x-r,y+r)&&!wall(x+r,y+r)}
 function cast(a){var dx=Math.cos(a),dy=Math.sin(a),d=0;while(d<14){d+=.045;if(wall(p.x+dx*d,p.y+dy*d))return d}return 14}
