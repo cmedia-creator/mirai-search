@@ -99,11 +99,11 @@ playEl.addEventListener('touchend',e=>{e.preventDefault();startEl.style.display=
 try{
 const cv=document.getElementById('gl'),gl=cv.getContext('webgl2',{alpha:false,antialias:false,powerPreference:'high-performance'});
 if(!gl){document.getElementById('status').textContent='WebGL2 unavailable';return}
-const VS=\`#version 300 es
+const VS=`#version 300 es
 precision mediump float;layout(location=0)in vec3 p;layout(location=1)in vec3 n;layout(location=2)in vec3 c;
 uniform mat4 vp;uniform mat4 model;uniform float materialId;out vec3 col;out vec3 wp;out vec3 lp;out float fog;out float mid;
-void main(){vec4 w=model*vec4(p,1.);vec3 nn=normalize(mat3(model)*n);vec3 sun=normalize(vec3(-.72,.62,.30));float diff=max(dot(nn,sun),0.);float side=.82+.18*max(nn.y,0.);col=c*(.58+diff*.34)*side;wp=w.xyz;lp=p;mid=materialId;fog=clamp((length(w.xz)-11.)/13.,0.,1.);gl_Position=vp*w;}\`;
-const FS=\`#version 300 es
+void main(){vec4 w=model*vec4(p,1.);vec3 nn=normalize(mat3(model)*n);vec3 sun=normalize(vec3(-.72,.62,.30));float diff=max(dot(nn,sun),0.);float side=.82+.18*max(nn.y,0.);col=c*(.58+diff*.34)*side;wp=w.xyz;lp=p;mid=materialId;fog=clamp((length(w.xz)-11.)/13.,0.,1.);gl_Position=vp*w;}`;
+const FS=`#version 300 es
 precision mediump float;in vec3 col;in vec3 wp;in vec3 lp;in float fog;in float mid;out vec4 outColor;
 float line(float v,float f){return 1.-smoothstep(.018,.055,abs(fract(v*f)-.5));}
 void main(){vec3 cc=col;
@@ -112,7 +112,7 @@ void main(){vec3 cc=col;
  else if(mid<2.5){float grain=sin((wp.x+wp.z)*28.)*.035;float scratch=line(wp.x+wp.z,3.7)*.035;cc+=grain-scratch;}
  else if(mid<3.5){float seam=line(wp.y,3.2)*.07;cc*=1.-seam;}
  else if(mid<4.5){cc+=vec3(.13,.035,.025)*(1.-fog);}
- vec3 fc=vec3(.47,.41,.54);outColor=vec4(mix(cc,fc,fog),1.);}\`;
+ vec3 fc=vec3(.47,.41,.54);outColor=vec4(mix(cc,fc,fog),1.);}`;
 function sh(t,s){let x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShader(x);if(!gl.getShaderParameter(x,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(x);return x}
 let pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,VS));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,FS));gl.linkProgram(pr);gl.useProgram(pr);
 const uvp=gl.getUniformLocation(pr,'vp'),um=gl.getUniformLocation(pr,'model'),umi=gl.getUniformLocation(pr,'materialId');
