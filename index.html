@@ -15,7 +15,7 @@
 .title{font-size:28px;font-weight:900;letter-spacing:.15em}.sub{font-size:11px;line-height:1.8;color:#bbb}button{font:inherit;padding:13px 32px;background:#17121d;color:#eee;border:1px solid #aaa}
 </style></head>
 <body><canvas id="gl" width="400" height="240"></canvas>
-<div id="hud"><div id="interact" style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.08em;opacity:0"></div><div id="chapter">DREAM 01 / WEBGL v30</div><div id="status">DREAM 01 PLAYABLE TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
+<div id="hud"><div id="interact" style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.08em;opacity:0"></div><div id="chapter">DREAM 01 / WEBGL v31</div><div id="status">DREAM 01 PLAYABLE TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
 <div id="start"><div><div class="title">DREAM//ERROR</div><p class="sub">EARLY DS 3D TEST<br><br>左ドラッグ：移動　右ドラッグ：視点<br>机と椅子の横・後ろへ回り込めるか確認</p><button id="play" type="button" onclick="document.getElementById('start').style.display='none';window.__startRequested=true;">START</button></div></div>
 <script>
 (function(){
@@ -151,7 +151,7 @@ function cube(color){
  F.forEach(f=>{let ids=[f[0],f[1],f[2],f[0],f[2],f[3]];ids.forEach(i=>a.push(P[i*3],P[i*3+1],P[i*3+2],f[4],f[5],f[6],color[0],color[1],color[2]))});
  let b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(a),gl.STATIC_DRAW);return{b:b,n:a.length/9}
 }
-const meshes={wall:cube([.58,.55,.52]),floor:cube([.34,.27,.22]),wood:cube([.48,.31,.20]),metal:cube([.25,.27,.28]),glass:cube([.55,.61,.64]),door:cube([.39,.27,.19]),shadow:cube([.07,.06,.06]),chalk:cube([.12,.19,.15]),trim:cube([.30,.24,.19]),girl:cube([.20,.16,.23]),skin:cube([.66,.52,.48])};const matId={wall:3,floor:1,wood:2,metal:0,glass:4,door:2,shadow:0,chalk:5,trim:2,girl:0,skin:0};
+const meshes={wall:cube([.58,.55,.52]),floor:cube([.34,.27,.22]),wood:cube([.48,.31,.20]),metal:cube([.25,.27,.28]),glass:cube([.55,.61,.64]),door:cube([.39,.27,.19]),shadow:cube([.07,.06,.06]),chalk:cube([.12,.19,.15]),trim:cube([.30,.24,.19]),girl:cube([.13,.12,.16]),uniform:cube([.18,.20,.25]),shirt:cube([.66,.65,.61]),hair:cube([.055,.045,.060]),skin:cube([.64,.49,.44])};const matId={wall:3,floor:1,wood:2,metal:0,glass:4,door:2,shadow:0,chalk:5,trim:2,girl:0,uniform:0,shirt:3,hair:0,skin:0};
 let objs=[],solids=[],interactables=[];function add(mesh,x,y,z,sx,sy,sz,solid,id){let o={mesh,x,y,z,sx,sy,sz,id:id||null};objs.push(o);if(solid)solids.push({x:x,z:z,hx:sx*.88,hz:sz*.88});if(id)interactables.push(o);return o}function shadow(x,z,sx,sz){
  objs.push({mesh:'shadow',x:x,y:.012,z:z,sx:sx,sy:.006,sz:sz});
  // sunset cast shadow: stretched diagonally away from left-side windows
@@ -198,6 +198,7 @@ add('chalk',2.9,1.65,-15.75,2.1,.75,.04,false,'BLACKBOARD');add('trim',2.9,.86,-
 for(let i=0;i<4;i++){let z=-5-i*1.25;shadow(5.52,z,.34,.48);add('metal',5.55,.9,z,.35,.9,.5,true,i===0?'LOCKER':null);add('shadow',5.18,.9,z,.012,.84,.43);add('trim',5.17,1.10,z-.28,.018,.08,.018)}
 const girl={
  x:-3.9,z:-12.8,targetX:-3.9,targetZ:-12.8,state:'WINDOW',visibleMove:false,moveSpeed:.48,seated:false,
+ facing:Math.PI*.08,headTurn:0,
  update(dt){
   if(this.state!=='WALK_TO_DESK')return;
   const dx=this.targetX-this.x,dz=this.targetZ-this.z,d=Math.hypot(dx,dz);
@@ -205,15 +206,36 @@ const girl={
   this.x+=dx/d*this.moveSpeed*dt;this.z+=dz/d*this.moveSpeed*dt;
  }
 };
+function girlPart(mesh,x,y,z,sx,sy,sz){objs.push({mesh,x,y,z,sx,sy,sz,__girlTemp:true})}
 function drawGirl(){
- // Deliberately simple placeholder silhouette. Replace with authored GLB later.
- const parts=[
-  ['girl',girl.x,1.12,girl.z,.18,.52,.16],
-  ['skin',girl.x,1.78,girl.z,.15,.15,.15],
-  ['girl',girl.x,1.52,girl.z,.22,.16,.18]
- ];
- if(girl.seated){parts[0][2]=.78;parts[1][2]=1.43;parts[2][2]=1.18}
- for(const a of parts)objs.push({mesh:a[0],x:a[1],y:a[2],z:a[3],sx:a[4],sy:a[5],sz:a[6],__girlTemp:true});
+ // v31 articulated silhouette. Still procedural so a later authored GLB can replace this block cleanly.
+ const x=girl.x,z=girl.z;
+ if(!girl.seated){
+  // contact shadow
+  girlPart('shadow',x+.04,.013,z+.02,.24,.005,.17);
+  // legs + shoes
+  girlPart('skin',x-.10,.47,z,.055,.34,.06);girlPart('skin',x+.10,.47,z,.055,.34,.06);
+  girlPart('girl',x-.10,.12,z-.035,.075,.055,.13);girlPart('girl',x+.10,.12,z-.035,.075,.055,.13);
+  // skirt, blouse and dark collar
+  girlPart('uniform',x,.93,z,.27,.25,.18);girlPart('shirt',x,1.30,z,.25,.27,.15);
+  girlPart('uniform',x,1.47,z-.135,.20,.055,.025);
+  // arms hang naturally, slightly asymmetric
+  girlPart('shirt',x-.30,1.24,z+.015,.055,.27,.055);girlPart('shirt',x+.30,1.21,z-.015,.055,.30,.055);
+  girlPart('skin',x-.30,.94,z+.015,.05,.075,.05);girlPart('skin',x+.30,.89,z-.015,.05,.075,.05);
+  // neck, head and layered hair mass
+  girlPart('skin',x,1.58,z,.07,.07,.07);girlPart('skin',x,1.76,z,.145,.17,.135);
+  girlPart('hair',x,1.82,z+.07,.18,.22,.13);girlPart('hair',x-.13,1.62,z+.07,.07,.28,.10);girlPart('hair',x+.13,1.62,z+.07,.07,.28,.10);
+  // fringe makes the face less mannequin-like from oblique angles
+  girlPart('hair',x,1.86,z-.105,.14,.055,.035);
+ }else{
+  girlPart('shadow',x,.013,z,.28,.005,.22);
+  girlPart('skin',x-.12,.47,z-.12,.055,.22,.055);girlPart('skin',x+.12,.47,z-.12,.055,.22,.055);
+  girlPart('uniform',x,.78,z,.28,.20,.19);girlPart('shirt',x,1.08,z,.25,.25,.15);
+  girlPart('shirt',x-.29,1.04,z,.05,.24,.05);girlPart('shirt',x+.29,1.04,z,.05,.24,.05);
+  girlPart('skin',x,1.51,z,.145,.17,.135);girlPart('hair',x,1.57,z+.07,.18,.22,.13);
+  girlPart('hair',x-.13,1.38,z+.07,.07,.24,.10);girlPart('hair',x+.13,1.38,z+.07,.07,.24,.10);
+  girlPart('hair',x,1.61,z-.105,.14,.055,.035);
+ }
 }
 drawGirl();
 function refreshGirlGeometry(){
