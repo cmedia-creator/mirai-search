@@ -15,7 +15,7 @@
 .title{font-size:28px;font-weight:900;letter-spacing:.15em}.sub{font-size:11px;line-height:1.8;color:#bbb}button{font:inherit;padding:13px 32px;background:#17121d;color:#eee;border:1px solid #aaa}
 </style></head>
 <body><canvas id="gl" width="400" height="240"></canvas>
-<div id="hud"><div id="interact" style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.08em;opacity:0"></div><div id="chapter">DREAM 01 / WEBGL v26</div><div id="status">DREAM 01 PLAYABLE TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
+<div id="hud"><div id="interact" style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.08em;opacity:0"></div><div id="chapter">DREAM 01 / WEBGL v27</div><div id="status">DREAM 01 PLAYABLE TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
 <div id="start"><div><div class="title">DREAM//ERROR</div><p class="sub">EARLY DS 3D TEST<br><br>左ドラッグ：移動　右ドラッグ：視点<br>机と椅子の横・後ろへ回り込めるか確認</p><button id="play" type="button" onclick="document.getElementById('start').style.display='none';window.__startRequested=true;">START</button></div></div>
 <script>
 (function(){
@@ -134,7 +134,11 @@ add('door',0,1,-15.88,.65,1,.05,false,'EXIT_DOOR');add('metal',0,2.1,-15.84,.75,
 // desks and chairs, actual volumes
 function desk(x,z){shadow(x,z,.57,.37);add('wood',x,.72,z,.60,.055,.40,true);for(let dx of[-.52,.52])for(let dz of[-.32,.32])add('metal',x+dx,.35,z+dz,.035,.35,.035)}
 function chair(x,z){shadow(x,z,.34,.34);add('wood',x,.45,z,.38,.045,.36,true);add('wood',x,.78,z+.32,.38,.32,.04);for(let dx of[-.30,.30])for(let dz of[-.28,.28])add('metal',x+dx,.22,z+dz,.025,.22,.025)}
-for(let r=0;r<3;r++)for(let q=0;q<3;q++){let x=-2.4+q*2.4,z=-6-r*2.6;desk(x,z);chair(x,z+.85)}\n// Semantic proxy for the girl's desk. Visual geometry remains unchanged in v23.\ninteractables.push({id:'GIRL_DESK',x:0,y:.72,z:-6,sx:.60,sy:.055,sz:.40});\n// Window interaction proxy near the first pane.\ninteractables.push({id:'WINDOW',x:-5.8,y:1.6,z:-4.5,sx:.2,sy:1,sz:1.4});
+for(let r=0;r<3;r++)for(let q=0;q<3;q++){let x=-2.4+q*2.4,z=-6-r*2.6;desk(x,z);chair(x,z+.85)}
+// Semantic proxy for the girl's desk. Visual geometry remains unchanged in v23.
+interactables.push({id:'GIRL_DESK',x:0,y:.72,z:-6,sx:.60,sy:.055,sz:.40});
+// Window interaction proxy near the first pane.
+interactables.push({id:'WINDOW',x:-5.8,y:1.6,z:-4.5,sx:.2,sy:1,sz:1.4});
 // blackboard + lockers
 add('metal',2.9,1.65,-15.75,2.1,.75,.04,false,'BLACKBOARD');for(let i=0;i<4;i++){shadow(5.52,-5-i*1.25,.34,.48);add('metal',5.55,.9,-5-i*1.25,.35,.9,.5,true,i===0?'LOCKER':null)}
 const girl={
@@ -265,7 +269,8 @@ function interact(){
  interactCooldown=.25;
  const id=currentInteractable.id;
  behaviorLogger.recordInteraction(id);
- if(id==='EXIT_DOOR'&&gameState.realExit){statusEl.textContent='朝の光が差している。';setTimeout(completeDream01,900);return}\n if(id==='EXIT_DOOR'&&gameState.exitUnlocked){statusEl.textContent='扉の向こうは暗い。';setTimeout(falseExit,650);return}
+ if(id==='EXIT_DOOR'&&gameState.realExit){statusEl.textContent='朝の光が差している。';setTimeout(completeDream01,900);return}
+ if(id==='EXIT_DOOR'&&gameState.exitUnlocked){statusEl.textContent='扉の向こうは暗い。';setTimeout(falseExit,650);return}
  statusEl.textContent=id==='GIRL_DESK'?(anomalyVisual.desk?'傷が増えている。':'名前の部分だけ削れている。'):
   id==='LOCKER'?(anomalyVisual.locker?'中に、長い髪が一本落ちている。':'古いロッカーだ。'):
   id==='WINDOW'?(anomalyVisual.window?'校庭に、誰もいない。':'曇った窓だ。'):
@@ -287,7 +292,9 @@ function update(dt){
  if(len>1){mv.x/=len;mv.y/=len;len=1}
  const isMoving=len>.08;
  behaviorLogger.update(dt,isMoving,isMoving&&sprint,getAreaId(pos.x,pos.z));
- updateDreamState(dt);\n if(interactCooldown>0)interactCooldown=Math.max(0,interactCooldown-dt);\n refreshInteraction();
+ updateDreamState(dt);
+ if(interactCooldown>0)interactCooldown=Math.max(0,interactCooldown-dt);
+ refreshInteraction();
  let sp=(sprint?2.3:1.4)*dt,fx=Math.cos(yaw),fz=Math.sin(yaw),rx=-fz,rz=fx,
      nx=pos.x+(fx*(-mv.y)+rx*mv.x)*sp,nz=pos.z+(fz*(-mv.y)+rz*mv.x)*sp;
  if(!blocked(nx,pos.z))pos.x=nx;
