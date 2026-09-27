@@ -15,7 +15,7 @@
 .title{font-size:28px;font-weight:900;letter-spacing:.15em}.sub{font-size:11px;line-height:1.8;color:#bbb}button{font:inherit;padding:13px 32px;background:#17121d;color:#eee;border:1px solid #aaa}
 </style></head>
 <body><canvas id="gl" width="400" height="240"></canvas>
-<div id="hud"><div id="interact" style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.08em;opacity:0"></div><div id="chapter">DREAM 01 / WEBGL v27</div><div id="status">DREAM 01 PLAYABLE TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
+<div id="hud"><div id="interact" style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.08em;opacity:0"></div><div id="chapter">DREAM 01 / WEBGL v28</div><div id="status">DREAM 01 PLAYABLE TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
 <div id="start"><div><div class="title">DREAM//ERROR</div><p class="sub">EARLY DS 3D TEST<br><br>左ドラッグ：移動　右ドラッグ：視点<br>机と椅子の横・後ろへ回り込めるか確認</p><button id="play" type="button" onclick="document.getElementById('start').style.display='none';window.__startRequested=true;">START</button></div></div>
 <script>
 (function(){
@@ -113,8 +113,10 @@ void main(){vec3 cc=col;
  else if(mid<1.5){float plank=line(wp.x,1.55)*.10;float grain=sin((wp.z*18.+wp.x*4.))*0.025;cc*=1.-plank+grain;}
  else if(mid<2.5){float grain=sin((wp.x+wp.z)*28.)*.035;float scratch=line(wp.x+wp.z,3.7)*.035;cc+=grain-scratch;}
  else if(mid<3.5){float seam=line(wp.y,3.2)*.07;cc*=1.-seam;}
- else if(mid<4.5){cc+=vec3(.13,.035,.025)*(1.-fog);}
- vec3 fc=vec3(.47,.41,.54);outColor=vec4(mix(cc,fc,fog),1.);}`;
+ else if(mid<4.5){cc+=vec3(.08,.035,.02)*(1.-fog);}
+ else if(mid<5.5){float chalkNoise=sin(wp.x*19.+wp.y*31.)*.018;cc+=chalkNoise;}
+ float depthShade=1.-clamp((length(wp.xz)-3.)/22.,0.,.18);cc*=depthShade;
+ vec3 fc=vec3(.25,.23,.28);outColor=vec4(mix(cc,fc,fog*.72),1.);}`;
 function sh(t,s){let x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShader(x);if(!gl.getShaderParameter(x,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(x);return x}
 let pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,VS));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,FS));gl.linkProgram(pr);gl.useProgram(pr);
 const uvp=gl.getUniformLocation(pr,'vp'),um=gl.getUniformLocation(pr,'model'),umi=gl.getUniformLocation(pr,'materialId');
@@ -123,24 +125,28 @@ function cube(color){
  F.forEach(f=>{let ids=[f[0],f[1],f[2],f[0],f[2],f[3]];ids.forEach(i=>a.push(P[i*3],P[i*3+1],P[i*3+2],f[4],f[5],f[6],color[0],color[1],color[2]))});
  let b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(a),gl.STATIC_DRAW);return{b:b,n:a.length/9}
 }
-const meshes={wall:cube([.72,.67,.72]),floor:cube([.39,.34,.40]),wood:cube([.48,.31,.28]),metal:cube([.30,.31,.36]),glass:cube([.88,.57,.62]),door:cube([.48,.36,.40]),shadow:cube([.10,.08,.12]) ,girl:cube([.24,.18,.27]),skin:cube([.72,.58,.60])};const matId={wall:3,floor:1,wood:2,metal:0,glass:4,door:2,shadow:0};
+const meshes={wall:cube([.58,.55,.52]),floor:cube([.34,.27,.22]),wood:cube([.48,.31,.20]),metal:cube([.25,.27,.28]),glass:cube([.55,.61,.64]),door:cube([.39,.27,.19]),shadow:cube([.07,.06,.06]),chalk:cube([.12,.19,.15]),trim:cube([.30,.24,.19]),girl:cube([.20,.16,.23]),skin:cube([.66,.52,.48])};const matId={wall:3,floor:1,wood:2,metal:0,glass:4,door:2,shadow:0,chalk:5,trim:2,girl:0,skin:0};
 let objs=[],solids=[],interactables=[];function add(mesh,x,y,z,sx,sy,sz,solid,id){let o={mesh,x,y,z,sx,sy,sz,id:id||null};objs.push(o);if(solid)solids.push({x:x,z:z,hx:sx*.88,hz:sz*.88});if(id)interactables.push(o);return o}function shadow(x,z,sx,sz){objs.push({mesh:'shadow',x:x,y:.012,z:z,sx:sx,sy:.006,sz:sz})}
 // real 3D room: 12m x 18m
 add('floor',0,-.06,-7,6,.06,9);add('wall',-6,1.5,-7,.08,1.5,9);add('wall',6,1.5,-7,.08,1.5,9);add('wall',0,1.5,-16,6,1.5,.08);add('wall',0,3.05,-7,6,.05,9);
+// architectural trim breaks up the primitive box silhouette
+add('trim',0,.10,-15.84,5.85,.10,.055);add('trim',5.84,.10,-7,.055,.10,8.8);add('trim',-5.84,.10,-7,.055,.10,8.8);
+for(let z=-1.2;z>-15.5;z-=2.4)add('trim',-5.82,2.65,z,.055,.035,1.05);
 // window frames and sunset panes
 for(let z=-3;z>-14;z-=3){add('glass',-5.91,1.75,z,.03,.75,1.0);add('metal',-5.84,1.75,z,.04,.82,.04);add('metal',-5.84,1.75,z-1,.04,.82,.04);add('metal',-5.84,1.0,z-.5,.04,.04,.54);add('metal',-5.84,2.5,z-.5,.04,.04,.54)}
 // door at far end
 add('door',0,1,-15.88,.65,1,.05,false,'EXIT_DOOR');add('metal',0,2.1,-15.84,.75,.05,.07);
 // desks and chairs, actual volumes
-function desk(x,z){shadow(x,z,.57,.37);add('wood',x,.72,z,.60,.055,.40,true);for(let dx of[-.52,.52])for(let dz of[-.32,.32])add('metal',x+dx,.35,z+dz,.035,.35,.035)}
-function chair(x,z){shadow(x,z,.34,.34);add('wood',x,.45,z,.38,.045,.36,true);add('wood',x,.78,z+.32,.38,.32,.04);for(let dx of[-.30,.30])for(let dz of[-.28,.28])add('metal',x+dx,.22,z+dz,.025,.22,.025)}
+function desk(x,z){shadow(x,z,.62,.42);add('wood',x,.72,z,.62,.045,.41,true);add('trim',x,.655,z,.58,.025,.37);for(let dx of[-.53,.53])for(let dz of[-.33,.33])add('metal',x+dx,.34,z+dz,.025,.34,.025);add('metal',x,.39,z-.34,.53,.018,.018)}
+function chair(x,z){shadow(x,z,.37,.36);add('wood',x,.45,z,.39,.035,.36,true);add('wood',x,.76,z+.32,.39,.29,.035);add('trim',x,.76,z+.275,.34,.025,.018);for(let dx of[-.31,.31])for(let dz of[-.28,.28])add('metal',x+dx,.22,z+dz,.022,.22,.022)}
 for(let r=0;r<3;r++)for(let q=0;q<3;q++){let x=-2.4+q*2.4,z=-6-r*2.6;desk(x,z);chair(x,z+.85)}
 // Semantic proxy for the girl's desk. Visual geometry remains unchanged in v23.
 interactables.push({id:'GIRL_DESK',x:0,y:.72,z:-6,sx:.60,sy:.055,sz:.40});
 // Window interaction proxy near the first pane.
 interactables.push({id:'WINDOW',x:-5.8,y:1.6,z:-4.5,sx:.2,sy:1,sz:1.4});
 // blackboard + lockers
-add('metal',2.9,1.65,-15.75,2.1,.75,.04,false,'BLACKBOARD');for(let i=0;i<4;i++){shadow(5.52,-5-i*1.25,.34,.48);add('metal',5.55,.9,-5-i*1.25,.35,.9,.5,true,i===0?'LOCKER':null)}
+add('chalk',2.9,1.65,-15.75,2.1,.75,.04,false,'BLACKBOARD');add('trim',2.9,.86,-15.70,2.18,.035,.06);add('trim',2.9,2.44,-15.70,2.18,.035,.06);add('trim',.75,1.65,-15.70,.035,.82,.06);add('trim',5.05,1.65,-15.70,.035,.82,.06);
+for(let i=0;i<4;i++){let z=-5-i*1.25;shadow(5.52,z,.34,.48);add('metal',5.55,.9,z,.35,.9,.5,true,i===0?'LOCKER':null);add('shadow',5.18,.9,z,.012,.84,.43);add('trim',5.17,1.10,z-.28,.018,.08,.018)}
 const girl={
  x:-3.9,z:-12.8,targetX:-3.9,targetZ:-12.8,state:'WINDOW',visibleMove:false,moveSpeed:.48,seated:false,
  update(dt){
@@ -171,7 +177,7 @@ function perspective(o,fov,asp,n,f){let t=1/Math.tan(fov/2);o.fill(0);o[0]=t/asp
 function look(o,ex,ey,ez,cx,cy,cz){let zx=ex-cx,zy=ey-cy,zz=ez-cz,l=Math.hypot(zx,zy,zz);zx/=l;zy/=l;zz/=l;let xx=zz,xz=-zx;l=Math.hypot(xx,xz);xx/=l;xz/=l;let yx=-zy*xz,yy=zz*xx-zx*xz,yz=zy*xx;o.set([xx,yx,zx,0,0,yy,zy,0,xz,yz,zz,0,-(xx*ex+xz*ez),-(yx*ex+yy*ey+yz*ez),-(zx*ex+zy*ey+zz*ez),1]);return o}
 function mul(o,a,b){let r=new Float32Array(16);for(let c=0;c<4;c++)for(let r0=0;r0<4;r0++)r[c*4+r0]=a[r0]*b[c*4]+a[4+r0]*b[c*4+1]+a[8+r0]*b[c*4+2]+a[12+r0]*b[c*4+3];o.set(r);return o}
 function model(o,x,y,z,sx,sy,sz){o.set([sx,0,0,0,0,sy,0,0,0,0,sz,0,x,y,z,1]);return o}
-function render(){gl.viewport(0,0,400,240);gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.clearColor(.38,.28,.42,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);let P=mat4(),V=mat4(),VP=mat4(),M=mat4();perspective(P,Math.PI/3,400/240,.05,25);look(V,pos.x,1.55,pos.z,pos.x+Math.cos(yaw),1.55,pos.z+Math.sin(yaw));mul(VP,P,V);gl.uniformMatrix4fv(uvp,false,VP);
+function render(){gl.viewport(0,0,400,240);gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.clearColor(.18,.15,.18,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);let P=mat4(),V=mat4(),VP=mat4(),M=mat4();perspective(P,Math.PI/3,400/240,.05,25);look(V,pos.x,1.55,pos.z,pos.x+Math.cos(yaw),1.55,pos.z+Math.sin(yaw));mul(VP,P,V);gl.uniformMatrix4fv(uvp,false,VP);
  for(let o of objs){let me=meshes[o.mesh];gl.uniform1f(umi,matId[o.mesh]||0);gl.bindBuffer(gl.ARRAY_BUFFER,me.b);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,36,0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,3,gl.FLOAT,false,36,12);gl.enableVertexAttribArray(2);gl.vertexAttribPointer(2,3,gl.FLOAT,false,36,24);model(M,o.x,o.y,o.z,o.sx,o.sy,o.sz);gl.uniformMatrix4fv(um,false,M);gl.drawArrays(gl.TRIANGLES,0,me.n)}
 }
 function blocked(x,z){if(x<-5.65||x>5.65||z>.15||z<-15.55)return true;let r=.16;for(let s of solids)if(Math.abs(x-s.x)<s.hx+r&&Math.abs(z-s.z)<s.hz+r)return true;return false}
