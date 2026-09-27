@@ -15,14 +15,81 @@
 .title{font-size:28px;font-weight:900;letter-spacing:.15em}.sub{font-size:11px;line-height:1.8;color:#bbb}button{font:inherit;padding:13px 32px;background:#17121d;color:#eee;border:1px solid #aaa}
 </style></head>
 <body><canvas id="gl" width="400" height="240"></canvas>
-<div id="hud"><div id="chapter">DREAM 01 / WEBGL v22</div><div id="status">TEXTURE / LIGHT / COLLISION TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
+<div id="hud"><div id="chapter">DREAM 01 / WEBGL v23</div><div id="status">BEHAVIOR FOUNDATION TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
 <div id="start"><div><div class="title">DREAM//ERROR</div><p class="sub">EARLY DS 3D TEST<br><br>左ドラッグ：移動　右ドラッグ：視点<br>机と椅子の横・後ろへ回り込めるか確認</p><button id="play">START</button></div></div>
 <script>
 (function(){
 let running=false,last=performance.now();
+
+// DREAM 01 behavior foundation.
+// Keep observation separate from horror/gameplay reactions so later DREAMs can
+// reuse the player's real history without coupling it to presentation logic.
+const gameState={
+ phase:'INTRO',
+ loopCount:0,
+ trackingEnabled:false,
+ startedAt:0
+};
+const behaviorLogger={
+ interactionSequence:[],
+ interactionCountByObject:Object.create(null),
+ lookAtGirlCount:0,
+ lookAtGirlDuration:0,
+ lookBackCount:0,
+ runDuration:0,
+ walkDuration:0,
+ idleDuration:0,
+ areaStayTime:Object.create(null),
+ currentArea:'SPAWN',
+ lastArea:'SPAWN',
+ lastMoveYaw:null,
+ idleStreak:0,
+ recordInteraction(id){
+  if(!gameState.trackingEnabled||!id)return;
+  this.interactionSequence.push(id);
+  this.interactionCountByObject[id]=(this.interactionCountByObject[id]||0)+1;
+ },
+ setArea(id){
+  if(!id||id===this.currentArea)return;
+  this.lastArea=this.currentArea;
+  this.currentArea=id;
+ },
+ update(dt,isMoving,isRunning,areaId){
+  if(!gameState.trackingEnabled)return;
+  if(areaId)this.setArea(areaId);
+  this.areaStayTime[this.currentArea]=(this.areaStayTime[this.currentArea]||0)+dt;
+  if(isMoving){
+   this.idleStreak=0;
+   if(isRunning)this.runDuration+=dt; else this.walkDuration+=dt;
+  }else{
+   this.idleDuration+=dt;
+   this.idleStreak+=dt;
+  }
+ },
+ snapshot(){
+  return JSON.parse(JSON.stringify({
+   interactionSequence:this.interactionSequence,
+   interactionCountByObject:this.interactionCountByObject,
+   lookAtGirlCount:this.lookAtGirlCount,
+   lookAtGirlDuration:this.lookAtGirlDuration,
+   lookBackCount:this.lookBackCount,
+   runDuration:this.runDuration,
+   walkDuration:this.walkDuration,
+   idleDuration:this.idleDuration,
+   areaStayTime:this.areaStayTime,
+   currentArea:this.currentArea,
+   idleStreak:this.idleStreak,
+   loopCount:gameState.loopCount,
+   phase:gameState.phase
+  }));
+ }
+};
+// Temporary developer hook for v23 verification. No HUD/debug UI is exposed
+// to the player; remove or gate this before production.
+window.__dreamDebug={gameState,behaviorLogger,snapshot:()=>behaviorLogger.snapshot()};
 const startEl=document.getElementById('start'),statusEl=document.getElementById('status'),playEl=document.getElementById('play');
-playEl.addEventListener('click',()=>{startEl.style.display='none';running=true;last=performance.now()});
-playEl.addEventListener('touchend',e=>{e.preventDefault();startEl.style.display='none';running=true;last=performance.now()},{passive:false});
+playEl.addEventListener('click',()=>{startEl.style.display='none';running=true;gameState.phase='FREE_EXPLORE';gameState.trackingEnabled=true;gameState.startedAt=performance.now();last=performance.now()});
+playEl.addEventListener('touchend',e=>{e.preventDefault();startEl.style.display='none';running=true;gameState.phase='FREE_EXPLORE';gameState.trackingEnabled=true;gameState.startedAt=performance.now();last=performance.now()},{passive:false});
 try{
 const cv=document.getElementById('gl'),gl=cv.getContext('webgl2',{alpha:false,antialias:false,powerPreference:'high-performance'});
 if(!gl){document.getElementById('status').textContent='WebGL2 unavailable';return}
@@ -72,7 +139,23 @@ function render(){gl.viewport(0,0,400,240);gl.enable(gl.DEPTH_TEST);gl.enable(gl
  for(let o of objs){let me=meshes[o.mesh];gl.uniform1f(umi,matId[o.mesh]||0);gl.bindBuffer(gl.ARRAY_BUFFER,me.b);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,36,0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,3,gl.FLOAT,false,36,12);gl.enableVertexAttribArray(2);gl.vertexAttribPointer(2,3,gl.FLOAT,false,36,24);model(M,o.x,o.y,o.z,o.sx,o.sy,o.sz);gl.uniformMatrix4fv(um,false,M);gl.drawArrays(gl.TRIANGLES,0,me.n)}
 }
 function blocked(x,z){if(x<-5.65||x>5.65||z>.15||z<-15.55)return true;let r=.16;for(let s of solids)if(Math.abs(x-s.x)<s.hx+r&&Math.abs(z-s.z)<s.hz+r)return true;return false}
-function update(dt){if(!running)return;let len=Math.hypot(mv.x,mv.y);if(len>1){mv.x/=len;mv.y/=len}let sp=(sprint?2.3:1.4)*dt,fx=Math.cos(yaw),fz=Math.sin(yaw),rx=-fz,rz=fx,nx=pos.x+(fx*(-mv.y)+rx*mv.x)*sp,nz=pos.z+(fz*(-mv.y)+rz*mv.x)*sp;if(!blocked(nx,pos.z))pos.x=nx;if(!blocked(pos.x,nz))pos.z=nz}
+function getAreaId(x,z){
+ if(z<-13)return 'FRONT';
+ if(z<-9)return x>3.8?'LOCKERS':'BACK_ROWS';
+ if(z<-5)return x>3.8?'LOCKERS':'MID_ROWS';
+ return x<-3.8?'WINDOW_SIDE':'ENTRANCE';
+}
+function update(dt){
+ if(!running)return;
+ let len=Math.hypot(mv.x,mv.y);
+ if(len>1){mv.x/=len;mv.y/=len;len=1}
+ const isMoving=len>.08;
+ behaviorLogger.update(dt,isMoving,isMoving&&sprint,getAreaId(pos.x,pos.z));
+ let sp=(sprint?2.3:1.4)*dt,fx=Math.cos(yaw),fz=Math.sin(yaw),rx=-fz,rz=fx,
+     nx=pos.x+(fx*(-mv.y)+rx*mv.x)*sp,nz=pos.z+(fz*(-mv.y)+rz*mv.x)*sp;
+ if(!blocked(nx,pos.z))pos.x=nx;
+ if(!blocked(pos.x,nz))pos.z=nz;
+}
 function loop(t){let dt=Math.min(.04,(t-last)/1000||0);last=t;update(dt);render();requestAnimationFrame(loop)}requestAnimationFrame(loop);
 let lid=null,rid=null,ls=null,rs=null,nub=document.getElementById('nub');cv.addEventListener('touchstart',e=>{e.preventDefault();for(let t of e.changedTouches){if(t.clientX<innerWidth*.5&&lid===null){lid=t.identifier;ls={x:t.clientX,y:t.clientY}}else if(rid===null){rid=t.identifier;rs={x:t.clientX,y:t.clientY}}}},{passive:false});
 cv.addEventListener('touchmove',e=>{e.preventDefault();for(let t of e.changedTouches){if(t.identifier===lid){let dx=t.clientX-ls.x,dy=t.clientY-ls.y,m=Math.hypot(dx,dy),lim=38;if(m>lim){dx*=lim/m;dy*=lim/m}mv.x=dx/lim;mv.y=dy/lim;nub.style.transform='translate('+dx+'px,'+dy+'px)'}else if(t.identifier===rid){yaw+=(t.clientX-rs.x)*.006;rs.x=t.clientX;rs.y=t.clientY}}},{passive:false});
