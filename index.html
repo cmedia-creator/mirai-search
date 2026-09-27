@@ -15,7 +15,7 @@
 .title{font-size:28px;font-weight:900;letter-spacing:.15em}.sub{font-size:11px;line-height:1.8;color:#bbb}button{font:inherit;padding:13px 32px;background:#17121d;color:#eee;border:1px solid #aaa}
 </style></head>
 <body><canvas id="gl" width="400" height="240"></canvas>
-<div id="hud"><div id="interact" style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.08em;opacity:0"></div><div id="chapter">DREAM 01 / WEBGL v29</div><div id="status">DREAM 01 PLAYABLE TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
+<div id="hud"><div id="interact" style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.08em;opacity:0"></div><div id="chapter">DREAM 01 / WEBGL v30</div><div id="status">DREAM 01 PLAYABLE TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
 <div id="start"><div><div class="title">DREAM//ERROR</div><p class="sub">EARLY DS 3D TEST<br><br>左ドラッグ：移動　右ドラッグ：視点<br>机と椅子の横・後ろへ回り込めるか確認</p><button id="play" type="button" onclick="document.getElementById('start').style.display='none';window.__startRequested=true;">START</button></div></div>
 <script>
 (function(){
@@ -109,12 +109,27 @@ const FS=`#version 300 es
 precision mediump float;in vec3 col;in vec3 wp;in vec3 lp;in vec3 wn;in float fog;in float mid;uniform float lightLevel;out vec4 outColor;
 float line(float v,float f){return 1.-smoothstep(.018,.055,abs(fract(v*f)-.5));}
 void main(){vec3 cc=col;
- if(mid<.5){float g=line(wp.x+wp.z,.72)*.10;cc*=1.-g;}
- else if(mid<1.5){float plank=line(wp.x,1.55)*.10;float grain=sin((wp.z*18.+wp.x*4.))*0.025;cc*=1.-plank+grain;}
- else if(mid<2.5){float grain=sin((wp.x+wp.z)*28.)*.035;float scratch=line(wp.x+wp.z,3.7)*.035;cc+=grain-scratch;}
- else if(mid<3.5){float seam=line(wp.y,3.2)*.07;cc*=1.-seam;}
- else if(mid<4.5){cc+=vec3(.08,.035,.02)*(1.-fog);}
- else if(mid<5.5){float chalkNoise=sin(wp.x*19.+wp.y*31.)*.018;cc+=chalkNoise;}
+ if(mid<.5){
+  float brushed=sin(wp.y*73.+wp.z*17.)*.012;float wear=line(wp.y+wp.z,6.2)*.025;cc+=brushed-wear;
+ }
+ else if(mid<1.5){
+  float board=1.-smoothstep(.025,.065,abs(fract(wp.x*.82)-.5));
+  float joint=1.-smoothstep(.018,.05,abs(fract(wp.z*.34)-.5));
+  float grain=sin(wp.z*31.+sin(wp.x*7.)*2.)*.022+sin(wp.z*8.3)*.012;
+  cc*=1.-board*.13-joint*.07;cc+=grain;
+ }
+ else if(mid<2.5){
+  float grain=sin(wp.x*43.+sin(wp.z*11.)*2.5)*.025+sin((wp.x+wp.z)*13.)*.012;
+  float scratch=line(wp.x+wp.z,5.7)*.018;float edgeWear=smoothstep(.72,.96,max(abs(lp.x),abs(lp.z)))*.045;
+  cc+=grain-scratch+edgeWear;
+ }
+ else if(mid<3.5){
+  float mottled=(sin(wp.x*2.7+wp.y*5.1)+sin(wp.z*3.2-wp.y*7.3))*.012;
+  float lowerGrime=(1.-smoothstep(.12,1.05,wp.y))*.07;
+  cc+=mottled;cc*=1.-lowerGrime;
+ }
+ else if(mid<4.5){float dust=sin(wp.z*22.+wp.y*9.)*.012;cc+=vec3(.08,.035,.02)*(1.-fog)+dust;}
+ else if(mid<5.5){float chalkNoise=sin(wp.x*19.+wp.y*31.)*.018;float wipe=sin(wp.x*3.1+sin(wp.y*7.))*0.018;cc+=chalkNoise+wipe;}
  float depthShade=1.-clamp((length(wp.xz)-3.)/22.,0.,.18);cc*=depthShade;
  // Warm sunset enters from the left windows. Strongest on floor and inward-facing surfaces.
  float fromWindow=clamp(1.-(wp.x+6.)/10.,0.,1.);
@@ -147,6 +162,10 @@ add('floor',0,-.06,-7,6,.06,9);add('wall',-6,1.5,-7,.08,1.5,9);add('wall',6,1.5,
 // architectural trim breaks up the primitive box silhouette
 add('trim',0,.10,-15.84,5.85,.10,.055);add('trim',5.84,.10,-7,.055,.10,8.8);add('trim',-5.84,.10,-7,.055,.10,8.8);
 for(let z=-1.2;z>-15.5;z-=2.4)add('trim',-5.82,2.65,z,.055,.035,1.05);
+// unlit fluorescent fixtures and ceiling rails add overhead depth
+for(let z=-3;z>-14;z-=4.4){add('metal',-1.9,2.94,z,.72,.025,.09);add('metal',1.9,2.94,z,.72,.025,.09)}
+// modest teacher platform / front ledge
+add('trim',2.9,.18,-15.05,2.35,.12,.48);
 // window frames and sunset panes
 for(let z=-3;z>-14;z-=3){add('glass',-5.91,1.75,z,.03,.75,1.0);add('metal',-5.84,1.75,z,.04,.82,.04);add('metal',-5.84,1.75,z-1,.04,.82,.04);add('metal',-5.84,1.0,z-.5,.04,.04,.54);add('metal',-5.84,2.5,z-.5,.04,.04,.54)}
 // warm floor light pools from the sunset windows
@@ -154,8 +173,21 @@ for(let z=-3.5;z>-14;z-=3)add('glass',-3.75,.008,z-.25,1.55,.004,.72);
 // door at far end
 add('door',0,1,-15.88,.65,1,.05,false,'EXIT_DOOR');add('metal',0,2.1,-15.84,.75,.05,.07);
 // desks and chairs, actual volumes
-function desk(x,z){shadow(x,z,.62,.42);add('wood',x,.72,z,.62,.045,.41,true);add('trim',x,.655,z,.58,.025,.37);for(let dx of[-.53,.53])for(let dz of[-.33,.33])add('metal',x+dx,.34,z+dz,.025,.34,.025);add('metal',x,.39,z-.34,.53,.018,.018)}
-function chair(x,z){shadow(x,z,.37,.36);add('wood',x,.45,z,.39,.035,.36,true);add('wood',x,.76,z+.32,.39,.29,.035);add('trim',x,.76,z+.275,.34,.025,.018);for(let dx of[-.31,.31])for(let dz of[-.28,.28])add('metal',x+dx,.22,z+dz,.022,.22,.022)}
+function desk(x,z){
+ shadow(x,z,.62,.42);
+ add('wood',x,.72,z,.62,.045,.41,true);add('trim',x,.655,z,.58,.025,.37);
+ // steel school-desk frame: paired legs, side rails and front stretcher
+ for(let dx of[-.53,.53]){add('metal',x+dx,.36,z-.31,.024,.36,.024);add('metal',x+dx,.36,z+.31,.024,.36,.024);add('metal',x+dx,.26,z,.022,.022,.31)}
+ add('metal',x,.18,z-.31,.53,.022,.022);add('metal',x,.39,z-.34,.53,.018,.018);
+ // shallow under-desk shelf gives the silhouette a real classroom profile
+ add('metal',x,.54,z+.08,.48,.018,.25);
+}
+function chair(x,z){
+ shadow(x,z,.37,.36);add('wood',x,.45,z,.39,.035,.36,true);
+ add('wood',x,.77,z+.32,.39,.25,.032);add('trim',x,.77,z+.275,.34,.022,.018);
+ for(let dx of[-.31,.31]){add('metal',x+dx,.23,z-.27,.021,.23,.021);add('metal',x+dx,.38,z+.30,.021,.38,.021);add('metal',x+dx,.31,z,.018,.018,.28)}
+ add('metal',x,.18,z-.27,.31,.018,.018);
+}
 for(let r=0;r<3;r++)for(let q=0;q<3;q++){let x=-2.4+q*2.4,z=-6-r*2.6;desk(x,z);chair(x,z+.85)}
 // Semantic proxy for the girl's desk. Visual geometry remains unchanged in v23.
 interactables.push({id:'GIRL_DESK',x:0,y:.72,z:-6,sx:.60,sy:.055,sz:.40});
