@@ -100,7 +100,7 @@ playEl.addEventListener('click',startGame);
 playEl.addEventListener('touchend',e=>{e.preventDefault();startGame()},{passive:false});
 try{
 const cv=document.getElementById('gl'),gl=cv.getContext('webgl2',{alpha:false,antialias:false,powerPreference:'high-performance'});
-if(!gl){document.getElementById('status').textContent='WebGL2 unavailable';return}
+if(!gl){startEl.style.display='none';statusEl.textContent='起動失敗: WebGL2 unavailable';return}
 const VS=`#version 300 es
 precision mediump float;layout(location=0)in vec3 p;layout(location=1)in vec3 n;layout(location=2)in vec3 c;
 uniform mat4 vp;uniform mat4 model;uniform float materialId;out vec3 col;out vec3 wp;out vec3 lp;out float fog;out float mid;
@@ -298,6 +298,6 @@ let lid=null,rid=null,ls=null,rs=null,nub=document.getElementById('nub');cv.addE
 cv.addEventListener('touchmove',e=>{e.preventDefault();for(let t of e.changedTouches){if(t.identifier===lid){let dx=t.clientX-ls.x,dy=t.clientY-ls.y,m=Math.hypot(dx,dy),lim=38;if(m>lim){dx*=lim/m;dy*=lim/m}mv.x=dx/lim;mv.y=dy/lim;nub.style.transform='translate('+dx+'px,'+dy+'px)'}else if(t.identifier===rid){yaw+=(t.clientX-rs.x)*.006;rs.x=t.clientX;rs.y=t.clientY}}},{passive:false});
 function endTouch(e){for(let t of e.changedTouches){if(t.identifier===lid){lid=null;mv.x=mv.y=0;nub.style.transform='none'}if(t.identifier===rid)rid=null}}cv.addEventListener('touchend',endTouch);cv.addEventListener('touchcancel',endTouch);
 let rb=document.getElementById('run');rb.addEventListener('touchstart',e=>{e.preventDefault();sprint=true},{passive:false});rb.addEventListener('touchend',()=>sprint=false);rb.addEventListener('touchcancel',()=>sprint=false);
-}catch(err){statusEl.textContent='WEBGL ERROR: '+String(err).slice(0,80);console.error(err);}
+}catch(err){startEl.style.display='none';statusEl.textContent='起動失敗: '+String(err).slice(0,120);console.error(err);}
 })();
 </script></body></html>
