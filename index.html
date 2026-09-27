@@ -15,7 +15,7 @@
 .title{font-size:28px;font-weight:900;letter-spacing:.15em}.sub{font-size:11px;line-height:1.8;color:#bbb}button{font:inherit;padding:13px 32px;background:#17121d;color:#eee;border:1px solid #aaa}
 </style></head>
 <body><canvas id="gl" width="400" height="240"></canvas>
-<div id="hud"><div id="interact" style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.08em;opacity:0"></div><div id="chapter">DREAM 01 / WEBGL v23</div><div id="status">BEHAVIOR FOUNDATION TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
+<div id="hud"><div id="interact" style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.08em;opacity:0"></div><div id="chapter">DREAM 01 / WEBGL v24</div><div id="status">DREAM STATE / LOOP TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
 <div id="start"><div><div class="title">DREAM//ERROR</div><p class="sub">EARLY DS 3D TEST<br><br>左ドラッグ：移動　右ドラッグ：視点<br>机と椅子の横・後ろへ回り込めるか確認</p><button id="play">START</button></div></div>
 <script>
 (function(){
@@ -28,7 +28,8 @@ const gameState={
  phase:'INTRO',
  loopCount:0,
  trackingEnabled:false,
- startedAt:0
+ startedAt:0,
+ anomalyLevel:0,exitUnlocked:false,firstSequence:[],anomalySequence:[],loopElapsed:0,phaseElapsed:0
 };
 const behaviorLogger={
  interactionSequence:[],
@@ -48,6 +49,10 @@ const behaviorLogger={
   if(!gameState.trackingEnabled||!id)return;
   this.interactionSequence.push(id);
   this.interactionCountByObject[id]=(this.interactionCountByObject[id]||0)+1;
+  if(gameState.loopCount===0&&gameState.firstSequence.length<3&&['GIRL_DESK','LOCKER','WINDOW','BLACKBOARD'].includes(id)&&!gameState.firstSequence.includes(id)){
+   gameState.firstSequence.push(id);
+   if(gameState.firstSequence.length===3)gameState.anomalySequence=gameState.firstSequence.slice();
+  }
  },
  setArea(id){
   if(!id||id===this.currentArea)return;
@@ -80,7 +85,8 @@ const behaviorLogger={
    currentArea:this.currentArea,
    idleStreak:this.idleStreak,
    loopCount:gameState.loopCount,
-   phase:gameState.phase
+   phase:gameState.phase,
+   anomalyLevel:gameState.anomalyLevel,exitUnlocked:gameState.exitUnlocked,firstSequence:gameState.firstSequence,anomalySequence:gameState.anomalySequence
   }));
  }
 };
@@ -139,6 +145,41 @@ function render(){gl.viewport(0,0,400,240);gl.enable(gl.DEPTH_TEST);gl.enable(gl
  for(let o of objs){let me=meshes[o.mesh];gl.uniform1f(umi,matId[o.mesh]||0);gl.bindBuffer(gl.ARRAY_BUFFER,me.b);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,36,0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,3,gl.FLOAT,false,36,12);gl.enableVertexAttribArray(2);gl.vertexAttribPointer(2,3,gl.FLOAT,false,36,24);model(M,o.x,o.y,o.z,o.sx,o.sy,o.sz);gl.uniformMatrix4fv(um,false,M);gl.drawArrays(gl.TRIANGLES,0,me.n)}
 }
 function blocked(x,z){if(x<-5.65||x>5.65||z>.15||z<-15.55)return true;let r=.16;for(let s of solids)if(Math.abs(x-s.x)<s.hx+r&&Math.abs(z-s.z)<s.hz+r)return true;return false}
+const anomalyVisual={desk:false,locker:false,window:false,blackboard:false,lastCue:''};
+function interactionTotal(){return behaviorLogger.interactionSequence.length}
+function setPhase(next){if(gameState.phase===next)return;gameState.phase=next;gameState.phaseElapsed=0}
+function setAnomalyLevel(level){
+ if(level<=gameState.anomalyLevel)return;
+ gameState.anomalyLevel=level;setPhase('ANOMALY_'+level);
+ if(level===1)statusEl.textContent='……時計の音が、一瞬ずれた気がする。';
+ if(level===2){
+  const c=behaviorLogger.interactionCountByObject;
+  const target=['GIRL_DESK','LOCKER','WINDOW','BLACKBOARD'].sort((a,b)=>(c[b]||0)-(c[a]||0))[0];
+  anomalyVisual[{GIRL_DESK:'desk',LOCKER:'locker',WINDOW:'window',BLACKBOARD:'blackboard'}[target]]=true;
+  anomalyVisual.lastCue=target;statusEl.textContent='教室のどこかが、さっきと違う。';
+ }
+ if(level===3){gameState.anomalySequence=(gameState.firstSequence.length?gameState.firstSequence:['GIRL_DESK','LOCKER','WINDOW']).slice(0,3);statusEl.textContent='……。'}
+}
+function updateDreamState(dt){
+ if(!gameState.trackingEnabled)return;
+ gameState.phaseElapsed+=dt;if(gameState.loopCount>0)gameState.loopElapsed+=dt;
+ const total=interactionTotal();
+ if(gameState.loopCount===0){
+  if(gameState.anomalyLevel<1&&(total>=3||gameState.phaseElapsed>=90))setAnomalyLevel(1);
+  if(gameState.anomalyLevel<2&&total>=6)setAnomalyLevel(2);
+  if(gameState.anomalyLevel<3&&total>=9)setAnomalyLevel(3);
+  if(gameState.anomalyLevel>=3&&total>=12&&!gameState.exitUnlocked){gameState.exitUnlocked=true;setPhase('EXIT_AVAILABLE');statusEl.textContent='……カチッ。'}
+ }else{
+  const step=Math.floor(gameState.loopElapsed/15)-1;
+  if(step>=0&&step<gameState.anomalySequence.length&&anomalyVisual.lastCue!==gameState.anomalySequence[step]){
+   anomalyVisual.lastCue=gameState.anomalySequence[step];statusEl.textContent='……また、同じ順番だ。';
+  }
+ }
+}
+function falseExit(){
+ gameState.loopCount++;gameState.exitUnlocked=false;gameState.anomalyLevel=3;gameState.loopElapsed=0;setPhase('LOOP');
+ pos.x=0;pos.z=-1.2;yaw=-Math.PI/2;statusEl.textContent='DREAM 01';
+}
 const interactEl=document.getElementById('interact');
 let currentInteractable=null,interactCooldown=0;
 function nearestLookInteractable(){
@@ -169,12 +210,13 @@ function interact(){
  interactCooldown=.25;
  const id=currentInteractable.id;
  behaviorLogger.recordInteraction(id);
- statusEl.textContent=id==='GIRL_DESK'?'名前の部分だけ削れている。':
-  id==='LOCKER'?'古いロッカーだ。':
-  id==='WINDOW'?'曇った窓だ。':
-  id==='BLACKBOARD'?'何も書かれていない。':
+ if(id==='EXIT_DOOR'&&gameState.exitUnlocked){statusEl.textContent='扉の向こうは暗い。';setTimeout(falseExit,650);return}
+ statusEl.textContent=id==='GIRL_DESK'?(anomalyVisual.desk?'傷が増えている。':'名前の部分だけ削れている。'):
+  id==='LOCKER'?(anomalyVisual.locker?'中に、長い髪が一本落ちている。':'古いロッカーだ。'):
+  id==='WINDOW'?(anomalyVisual.window?'校庭に、誰もいない。':'曇った窓だ。'):
+  id==='BLACKBOARD'?(anomalyVisual.blackboard?'消した跡がある。「まだ？」':'何も書かれていない。'):
   id==='EXIT_DOOR'?'開かない。':'調べた。';
- setTimeout(()=>{if(running)statusEl.textContent='BEHAVIOR FOUNDATION TEST'},1600);
+ setTimeout(()=>{if(running)statusEl.textContent='DREAM STATE / LOOP TEST'},1600);
 }
 cv.addEventListener('click',()=>interact());
 window.addEventListener('keydown',e=>{if(e.code==='KeyE'||e.code==='Space'){e.preventDefault();interact()}});
@@ -189,7 +231,8 @@ function update(dt){
  let len=Math.hypot(mv.x,mv.y);
  if(len>1){mv.x/=len;mv.y/=len;len=1}
  const isMoving=len>.08;
- behaviorLogger.update(dt,isMoving,isMoving&&sprint,getAreaId(pos.x,pos.z));\n if(interactCooldown>0)interactCooldown=Math.max(0,interactCooldown-dt);\n refreshInteraction();
+ behaviorLogger.update(dt,isMoving,isMoving&&sprint,getAreaId(pos.x,pos.z));
+ updateDreamState(dt);\n if(interactCooldown>0)interactCooldown=Math.max(0,interactCooldown-dt);\n refreshInteraction();
  let sp=(sprint?2.3:1.4)*dt,fx=Math.cos(yaw),fz=Math.sin(yaw),rx=-fz,rz=fx,
      nx=pos.x+(fx*(-mv.y)+rx*mv.x)*sp,nz=pos.z+(fz*(-mv.y)+rz*mv.x)*sp;
  if(!blocked(nx,pos.z))pos.x=nx;
