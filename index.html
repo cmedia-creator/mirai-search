@@ -15,7 +15,7 @@
 .title{font-size:28px;font-weight:900;letter-spacing:.15em}.sub{font-size:11px;line-height:1.8;color:#bbb}button{font:inherit;padding:13px 32px;background:#17121d;color:#eee;border:1px solid #aaa}
 </style></head>
 <body><canvas id="gl" width="400" height="240"></canvas>
-<div id="hud"><div id="interact" style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.08em;opacity:0"></div><div id="chapter">DREAM 01 / WEBGL v32</div><div id="status">DREAM 01 PLAYABLE TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
+<div id="hud"><div id="interact" style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.08em;opacity:0"></div><div id="chapter">DREAM 01 / WEBGL v33</div><div id="status">DREAM 01 PLAYABLE TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
 <div id="start"><div><div class="title">DREAM//ERROR</div><p class="sub">EARLY DS 3D TEST<br><br>左ドラッグ：移動　右ドラッグ：視点<br>机と椅子の横・後ろへ回り込めるか確認</p><button id="play" type="button" onclick="document.getElementById('start').style.display='none';window.__startRequested=true;">START</button></div></div>
 <script>
 (function(){
@@ -159,19 +159,19 @@ let objs=[],solids=[],interactables=[];function add(mesh,x,y,z,sx,sy,sz,solid,id
 }
 // v32 classroom shell: break the giant box into believable architectural zones
 add('floor',0,-.06,-7,6,.06,9);
-add('wall',-6,1.5,-7,.08,1.5,9);add('wall',6,1.5,-7,.08,1.5,9);add('wall',0,1.5,-16,6,1.5,.08);add('wall',0,3.05,-7,6,.05,9);
+add('wall',-6,1.5,-7,.08,1.5,9);add('wall',6,1.5,-7,.08,1.5,9);add('wall',0,1.5,-16,6,1.5,.08);add('wall',0,2.82,-7,6,.05,9);
 // baseboards, ceiling beams and wall rails
 add('trim',0,.10,-15.84,5.85,.10,.055);add('trim',5.84,.10,-7,.055,.10,8.8);add('trim',-5.84,.10,-7,.055,.10,8.8);
-add('trim',5.82,2.55,-7,.055,.035,8.7);add('trim',0,2.73,-15.78,5.75,.035,.05);
-for(let z=-1.2;z>-15.5;z-=2.4)add('trim',-5.82,2.65,z,.055,.035,1.05);
+add('trim',5.82,2.42,-7,.055,.035,8.7);add('trim',0,2.58,-15.78,5.75,.035,.05);
+for(let z=-1.2;z>-15.5;z-=2.4)add('trim',-5.82,2.48,z,.055,.035,1.05);
 // fluorescent housings, kept subtle rather than floating black bars
-for(let z=-3.2;z>-14;z-=4.6){add('trim',-1.85,2.96,z,.68,.018,.075);add('trim',1.85,2.96,z,.68,.018,.075)}
+for(let z=-3.2;z>-14;z-=4.6){add('trim',-1.85,2.73,z,.68,.018,.075);add('trim',1.85,2.73,z,.68,.018,.075)}
 // left-side windows: smaller panes, sill and warm lower wall
 for(let z=-3;z>-14;z-=3){
- add('glass',-5.91,1.78,z,.025,.68,.92);
- add('metal',-5.84,1.78,z,.025,.72,.025);add('metal',-5.84,1.78,z-.92,.025,.72,.025);
- add('metal',-5.84,1.12,z-.46,.025,.025,.48);add('metal',-5.84,2.44,z-.46,.025,.025,.48);
- add('trim',-5.72,.93,z-.46,.12,.055,1.05);
+ add('glass',-5.91,1.68,z,.025,.62,.92);
+ add('metal',-5.84,1.68,z,.025,.66,.025);add('metal',-5.84,1.78,z-.92,.025,.72,.025);
+ add('metal',-5.84,1.08,z-.46,.025,.025,.48);add('metal',-5.84,2.28,z-.46,.025,.025,.48);
+ add('trim',-5.72,.88,z-.46,.12,.055,1.05);
 }
 // sunset pools are broad and faint, not opaque white slabs
 for(let z=-3.5;z>-14;z-=3)add('glass',-4.35,.006,z-.25,.75,.003,.62);
@@ -200,16 +200,21 @@ function chair(x,z){
  for(let dx of[-.31,.31]){add('metal',x+dx,.23,z-.27,.021,.23,.021);add('metal',x+dx,.38,z+.30,.021,.38,.021);add('metal',x+dx,.31,z,.018,.018,.28)}
  add('metal',x,.18,z-.27,.31,.018,.018);
 }
-for(let r=0;r<3;r++)for(let q=0;q<3;q++){let x=-2.65+q*2.65+(r===1?.12:0),z=-5.4-r*2.85;desk(x,z);chair(x,z+.88)}
+const deskLayout=[
+ [-2.55,-5.25],[.18,-5.38],[2.78,-5.18],
+ [-2.68,-8.05],[.12,-8.18],[2.72,-8.02],
+ [-2.48,-10.82],[.30,-10.95],[2.85,-10.72]
+];
+for(const d of deskLayout){desk(d[0],d[1]);chair(d[0],d[1]+.88)}
 // Semantic proxy for the girl's desk. Visual geometry remains unchanged in v23.
-interactables.push({id:'GIRL_DESK',x:0,y:.72,z:-5.4,sx:.60,sy:.055,sz:.40});
+interactables.push({id:'GIRL_DESK',x:.18,y:.72,z:-5.38,sx:.60,sy:.055,sz:.40});
 // Window interaction proxy near the first pane.
 interactables.push({id:'WINDOW',x:-5.8,y:1.6,z:-4.5,sx:.2,sy:1,sz:1.4});
 // blackboard + lockers
 add('chalk',2.55,1.68,-15.75,2.35,.68,.035,false,'BLACKBOARD');add('trim',2.55,.96,-15.70,2.43,.035,.055);add('trim',2.55,2.40,-15.70,2.43,.035,.055);add('trim',.10,1.68,-15.70,.035,.75,.055);add('trim',5.0,1.68,-15.70,.035,.75,.055);
 for(let i=0;i<4;i++){let z=-6.0-i*1.08;shadow(5.48,z,.31,.42);add('metal',5.52,.86,z,.31,.86,.43,true,i===0?'LOCKER':null);add('trim',5.18,.86,z,.012,.78,.37);add('trim',5.17,1.04,z-.24,.018,.065,.018)}
 const girl={
- x:-3.9,z:-12.8,targetX:-3.9,targetZ:-12.8,state:'WINDOW',visibleMove:false,moveSpeed:.48,seated:false,
+ x:-4.55,z:-10.6,targetX:-4.55,targetZ:-10.6,state:'WINDOW',visibleMove:false,moveSpeed:.48,seated:false,
  facing:Math.PI*.08,headTurn:0,
  update(dt){
   if(this.state!=='WALK_TO_DESK')return;
@@ -254,13 +259,13 @@ function refreshGirlGeometry(){
  for(let i=objs.length-1;i>=0;i--)if(objs[i].__girlTemp)objs.splice(i,1);
  drawGirl();
 }
-let pos={x:0,z:-1.2},yaw=-Math.PI/2,mv={x:0,y:0},sprint=false;
+let pos={x:2.65,z:-1.25},yaw=-1.92,mv={x:0,y:0},sprint=false;
 function mat4(){return new Float32Array(16)}
 function perspective(o,fov,asp,n,f){let t=1/Math.tan(fov/2);o.fill(0);o[0]=t/asp;o[5]=t;o[10]=(f+n)/(n-f);o[11]=-1;o[14]=2*f*n/(n-f);return o}
 function look(o,ex,ey,ez,cx,cy,cz){let zx=ex-cx,zy=ey-cy,zz=ez-cz,l=Math.hypot(zx,zy,zz);zx/=l;zy/=l;zz/=l;let xx=zz,xz=-zx;l=Math.hypot(xx,xz);xx/=l;xz/=l;let yx=-zy*xz,yy=zz*xx-zx*xz,yz=zy*xx;o.set([xx,yx,zx,0,0,yy,zy,0,xz,yz,zz,0,-(xx*ex+xz*ez),-(yx*ex+yy*ey+yz*ez),-(zx*ex+zy*ey+zz*ez),1]);return o}
 function mul(o,a,b){let r=new Float32Array(16);for(let c=0;c<4;c++)for(let r0=0;r0<4;r0++)r[c*4+r0]=a[r0]*b[c*4]+a[4+r0]*b[c*4+1]+a[8+r0]*b[c*4+2]+a[12+r0]*b[c*4+3];o.set(r);return o}
 function model(o,x,y,z,sx,sy,sz){o.set([sx,0,0,0,0,sy,0,0,0,0,sz,0,x,y,z,1]);return o}
-function render(){gl.viewport(0,0,400,240);gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.clearColor(.13,.11,.13,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);let P=mat4(),V=mat4(),VP=mat4(),M=mat4();perspective(P,Math.PI/3,400/240,.05,25);look(V,pos.x,1.55,pos.z,pos.x+Math.cos(yaw),1.55,pos.z+Math.sin(yaw));mul(VP,P,V);gl.uniformMatrix4fv(uvp,false,VP);let ll=gameState.loopCount>0?.73:gameState.anomalyLevel>=3?.78:gameState.anomalyLevel===2?.90:gameState.anomalyLevel===1?.95:1.0;if(gameState.phase==='IDLE_RESOLUTION'||gameState.phase==='REAL_EXIT')ll=1.0;gl.uniform1f(ulight,ll);
+function render(){gl.viewport(0,0,400,240);gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.clearColor(.13,.11,.13,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);let P=mat4(),V=mat4(),VP=mat4(),M=mat4();perspective(P,1.10,400/240,.05,25);look(V,pos.x,1.50,pos.z,pos.x+Math.cos(yaw),1.50,pos.z+Math.sin(yaw));mul(VP,P,V);gl.uniformMatrix4fv(uvp,false,VP);let ll=gameState.loopCount>0?.73:gameState.anomalyLevel>=3?.78:gameState.anomalyLevel===2?.90:gameState.anomalyLevel===1?.95:1.0;if(gameState.phase==='IDLE_RESOLUTION'||gameState.phase==='REAL_EXIT')ll=1.0;gl.uniform1f(ulight,ll);
  for(let o of objs){let me=meshes[o.mesh];gl.uniform1f(umi,matId[o.mesh]||0);gl.bindBuffer(gl.ARRAY_BUFFER,me.b);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,36,0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,3,gl.FLOAT,false,36,12);gl.enableVertexAttribArray(2);gl.vertexAttribPointer(2,3,gl.FLOAT,false,36,24);model(M,o.x,o.y,o.z,o.sx,o.sy,o.sz);gl.uniformMatrix4fv(um,false,M);gl.drawArrays(gl.TRIANGLES,0,me.n)}
 }
 function blocked(x,z){if(x<-5.65||x>5.65||z>.15||z<-15.55)return true;let r=.16;for(let s of solids)if(Math.abs(x-s.x)<s.hx+r&&Math.abs(z-s.z)<s.hz+r)return true;return false}
@@ -326,7 +331,7 @@ function updateDreamState(dt){
 }
 function falseExit(){
  gameState.loopCount++;gameState.exitUnlocked=false;gameState.anomalyLevel=3;gameState.loopElapsed=0;setPhase('LOOP');
- pos.x=0;pos.z=-1.2;yaw=-Math.PI/2;behaviorLogger.idleStreak=0;gameState.idleResolutionTimer=0;girl.x=-3.35;girl.z=-12.25;girl.state='WINDOW';refreshGirlGeometry();statusEl.textContent='DREAM 01';
+ pos.x=2.65;pos.z=-1.25;yaw=-1.92;behaviorLogger.idleStreak=0;gameState.idleResolutionTimer=0;girl.x=-3.35;girl.z=-12.25;girl.state='WINDOW';refreshGirlGeometry();statusEl.textContent='DREAM 01';
 }
 const interactEl=document.getElementById('interact');
 let currentInteractable=null,interactCooldown=0;
