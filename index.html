@@ -15,10 +15,11 @@
 .title{font-size:28px;font-weight:900;letter-spacing:.15em}.sub{font-size:11px;line-height:1.8;color:#bbb}button{font:inherit;padding:13px 32px;background:#17121d;color:#eee;border:1px solid #aaa}
 </style></head>
 <body><canvas id="gl" width="400" height="240"></canvas>
-<div id="hud"><div id="interact" style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.08em;opacity:0"></div><div id="chapter">DREAM 01 / WEBGL v25</div><div id="status">DREAM 01 PLAYABLE TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
-<div id="start"><div><div class="title">DREAM//ERROR</div><p class="sub">EARLY DS 3D TEST<br><br>左ドラッグ：移動　右ドラッグ：視点<br>机と椅子の横・後ろへ回り込めるか確認</p><button id="play">START</button></div></div>
+<div id="hud"><div id="interact" style="position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.08em;opacity:0"></div><div id="chapter">DREAM 01 / WEBGL v26</div><div id="status">DREAM 01 PLAYABLE TEST</div><div id="stick"><div id="nub"></div></div><div id="run">RUN</div></div>
+<div id="start"><div><div class="title">DREAM//ERROR</div><p class="sub">EARLY DS 3D TEST<br><br>左ドラッグ：移動　右ドラッグ：視点<br>机と椅子の横・後ろへ回り込めるか確認</p><button id="play" type="button" onclick="document.getElementById('start').style.display='none';window.__startRequested=true;">START</button></div></div>
 <script>
 (function(){
+window.__startRequested=false;
 let running=false,last=performance.now();
 
 // DREAM 01 behavior foundation.
@@ -94,8 +95,9 @@ const behaviorLogger={
 // to the player; remove or gate this before production.
 window.__dreamDebug={gameState,behaviorLogger,snapshot:()=>behaviorLogger.snapshot()};
 const startEl=document.getElementById('start'),statusEl=document.getElementById('status'),playEl=document.getElementById('play');
-playEl.addEventListener('click',()=>{startEl.style.display='none';running=true;gameState.phase='FREE_EXPLORE';gameState.trackingEnabled=true;gameState.startedAt=performance.now();last=performance.now()});
-playEl.addEventListener('touchend',e=>{e.preventDefault();startEl.style.display='none';running=true;gameState.phase='FREE_EXPLORE';gameState.trackingEnabled=true;gameState.startedAt=performance.now();last=performance.now()},{passive:false});
+function startGame(){startEl.style.display='none';window.__startRequested=true;running=true;gameState.phase='FREE_EXPLORE';gameState.trackingEnabled=true;gameState.startedAt=performance.now();last=performance.now();statusEl.textContent='DREAM 01 PLAYABLE TEST'}
+playEl.addEventListener('click',startGame);
+playEl.addEventListener('touchend',e=>{e.preventDefault();startGame()},{passive:false});
 try{
 const cv=document.getElementById('gl'),gl=cv.getContext('webgl2',{alpha:false,antialias:false,powerPreference:'high-performance'});
 if(!gl){document.getElementById('status').textContent='WebGL2 unavailable';return}
